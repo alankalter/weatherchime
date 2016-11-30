@@ -1,0 +1,106 @@
+﻿
+@{
+    ViewBag.Title = "Viz";
+}
+
+<h2>Viz</h2>
+
+<style>
+    canvas {
+        width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    }
+</style>
+ 
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+ 
+        <script>
+            $(document).ready(function() {
+
+                var canvas = document.getElementById("myCanvas");
+                var ctx = canvas.getContext("2d");
+				
+				var image = new Image();
+				image.src = "/Home/GetPhoto?stuff=things";
+				$(image).load(function() {
+				    ctx.drawImage(image, 0, 0);
+
+				    function rule30(neighbor1, pixelVal, neighbor2) {
+				        var n1 = (neighbor1 > 127);
+				        var pv = (pixelVal > 127);
+				        var n2 = (neighbor2 > 127);
+
+				        if (n1 && pv && n2)
+				            return false;
+				        else if (n1 && pv && !n2)
+				            return false;
+				        else if (n1 && !pv && n2)
+				            return false;
+				        else if (n1 && !pv && !n2)
+				            return true;
+				        else if (!n1 && pv && n2)
+				            return true;
+				        else if (!n1 && pv && !n2)
+				            return true;
+				        else if (!n1 && !pv && n2)
+				            return true;
+				        else if (!n1 && !pv && !n2)
+				            return false;
+				    };
+
+				 
+				    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				    var pixels = imageData.data;
+				    var numPixels = pixels.length;
+                        //imageData.width * imageData.height;
+				    var factor = 10;
+
+
+				    //for (var j = 0; j < 1; j++) {
+				    setInterval(function () {
+
+				        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				        var pixels = imageData.data;
+				        var numPixels = pixels.length;
+
+				        for (var i = 3; i < (numPixels) - 3; i++) {
+				            
+				            if (rule30(pixels[i - 3], pixels[i], pixels[i + 3])) {
+				                if (pixels[i] + factor > 255) {
+				                    pixels[i] = 0
+				                }
+				                else {
+				                    pixels[i] = pixels[i] + factor;
+				                }
+				            }
+				            else {
+				                if (pixels[i] - factor < 0) {
+				                    pixels[i] = 255;
+				                }
+				                else {
+				                    pixels[i] = pixels[i] - factor;
+				                }
+
+				            }
+
+				        }
+
+				 ctx.clearRect(0, 0, canvas.width, canvas.height);
+				 ctx.putImageData(imageData, 0, 0);
+				    }, 1000);
+
+				});
+				
+							
+							});
+				
+				    
+        </script>
+ 
+        <canvas id="myCanvas" width="300" height="300" >
+            <!-- Insert fallback content here -->
+        </canvas>	
+	
