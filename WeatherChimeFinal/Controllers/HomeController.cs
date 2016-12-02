@@ -56,12 +56,24 @@ namespace WeatherChimeFinal.Controllers
         }
 
         [HttpGet]
-        public FileResult GetPhoto(string request)
+        public FileResult GetPhoto(string request, string weatherEvent)
         {
-            //string request = "75201.1.99999";
+            Byte[] b;
+            if (weatherEvent != null)
+            {
+                b = GetPhotoByWeatherEvent(weatherEvent);
+            }
+            else
+            {
+                b = GetPhotoByZmw(request);
+            }
 
+            return File(b, "image/jpeg");
+        }
+
+        public Byte[] GetPhotoByZmw(string request)
+        {
             var param = "api/4b22bd927f7356b7/satellite/q/zmw:" + request + ".json";
-
 
             var model = new PerformanceViewModel();
             string imgUrl = "";
@@ -81,8 +93,10 @@ namespace WeatherChimeFinal.Controllers
                 string text = response.Content.ReadAsStringAsync().Result;
                 JObject responseJObject = JObject.Parse(text);
 
+
                 imgUrl = responseJObject["satellite"]["image_url"].ToString();
-                
+                //imgUrl = imgUrl.Replace("height=300", "height=600");
+                //imgUrl = imgUrl.Replace("width=300", "width=600");
             }
             else
             {
@@ -92,16 +106,38 @@ namespace WeatherChimeFinal.Controllers
 
             var webClient = new WebClient();
 
-            Byte[] b = webClient.DownloadData(imgUrl);   
-            return File(b, "image/jpeg");
+            Byte[] b = webClient.DownloadData(imgUrl);
+            return b;
         }
 
-        public ActionResult Performance(string request)
+        public Byte[] GetPhotoByWeatherEvent(string weatherEvent)
+        {
+            
+            Byte[] b = System.IO.File.ReadAllBytes(Server.MapPath("~/Content/Hurricane" + weatherEvent + ".jpg"));
+            
+            return b;
+        }
+
+        public ActionResult Performance(string request, string weatherEvent)
+        {
+            var model = new PerformanceViewModel();
+
+             if (weatherEvent != null) {
+                model = GetDataByWeatherEvent(weatherEvent);
+            }
+            else
+            {
+                model = GetDataByZmw(request);
+            }
+            return View(model);
+        } 
+
+        public PerformanceViewModel GetDataByZmw(string request)
         {
             var param = "api/4b22bd927f7356b7/conditions/q/zmw:" + request + ".json";
 
 
-            var model = new PerformanceViewModel(); 
+            var model = new PerformanceViewModel();
 
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri("http://api.wunderground.com/");
@@ -118,7 +154,8 @@ namespace WeatherChimeFinal.Controllers
                 string text = response.Content.ReadAsStringAsync().Result;
                 JObject responseJObject = JObject.Parse(text);
 
-                if (responseJObject["current_observation"] != null) {
+                if (responseJObject["current_observation"] != null)
+                {
 
                     model.Temp = responseJObject["current_observation"]["temp_c"].ToString();
                     model.Humidity = responseJObject["current_observation"]["relative_humidity"].ToString().Replace("%", "");
@@ -138,8 +175,25 @@ namespace WeatherChimeFinal.Controllers
             {
                 Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
             }
-            return View(model);
-        } 
+            return model;
+        }
+
+        public PerformanceViewModel GetDataByWeatherEvent(string weatherEvent)
+        {
+
+            var model = new PerformanceViewModel();
+
+            if (weatherEvent == "Andrew")
+            {
+                model.Temp = "21";
+                model.Humidity = "100";
+                model.Pressure = "922";
+                model.WindSpeed = "280";
+                model.Location = "Hurricane Andrew 08/24/1992";
+            }
+            return model;
+        }
+
 
         public ActionResult Viz()
         {
